@@ -7,7 +7,7 @@ It's also the start of a shared retrieval layer: the code in `backend/retrieval/
 ## Status
 
 - [x] BEIR dataset loader (SciFact)
-- [ ] Retriever interface + BM25
+- [x] Retriever interface + BM25 (index cached to disk)
 - [ ] Metrics + tests
 - [ ] Eval runner + CLI
 - [ ] Dense retriever

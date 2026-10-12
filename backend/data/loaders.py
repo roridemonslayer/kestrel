@@ -39,6 +39,11 @@ class Dataset:
     qrels: dict[str, dict[str, int]]  # query_id -> {doc_id: relevance}, relevance > 0 means relevant
 
 
+def documents_for_indexing(ds: "Dataset") -> dict[str, str]:
+    """doc_id -> the text a retriever should index: the title followed by the body."""
+    return {doc_id: f"{doc['title']}. {doc['text']}".strip(". ") for doc_id, doc in ds.corpus.items()}
+
+
 def _download(name: str) -> Path:
     folder = CACHE_DIR / name
     if (folder / "corpus.jsonl").exists():

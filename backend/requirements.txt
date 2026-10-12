@@ -1,3 +1,4 @@
 certifi
 rank_bm25
+numpy
 pytest
