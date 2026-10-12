@@ -27,6 +27,16 @@ It's also the start of a shared retrieval layer: the code in `backend/retrieval/
 
 BM25's nDCG@10 of 0.665 matches the BM25 baseline in the BEIR paper, and MiniLM's 0.648 matches its published SciFact score, which is a good check that the loader and metrics are right. Hybrid wins on every quality metric because keyword and semantic search fail on different queries. Latency is measured on a MacBook Air (M2); hybrid pays for running both retrievers.
 
+### NFCorpus (323 test queries, k = 10)
+
+| Retriever | recall@10 | MRR@10 | nDCG@10 | p50 ms | p95 ms |
+|---|---|---|---|---|---|
+| Hybrid (BM25 + dense, RRF) | **0.167** | **0.547** | **0.344** | 19.5 | 139.9 |
+| Dense (all-MiniLM-L6-v2) | 0.159 | 0.506 | 0.318 | 9.3 | 47.2 |
+| BM25 | 0.152 | 0.515 | 0.308 | 3.3 | 15.9 |
+
+NFCorpus queries have dozens of relevant documents each, so recall@10 is low for every retriever by design; nDCG uses its graded (1 or 2) judgments.
+
 ## The app
 
 - **Leaderboard**: recall@10, MRR@10, nDCG@10, p50/p95 latency per retriever, with charts.

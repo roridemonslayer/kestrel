@@ -10,3 +10,12 @@ def test_scifact_loads_with_known_sizes():
         assert query_id in ds.queries
         assert judged
         assert all(doc_id in ds.corpus for doc_id in judged)
+
+
+def test_nfcorpus_loads_with_graded_relevance():
+    ds = load_dataset("nfcorpus")
+    assert len(ds.corpus) == 3633
+    assert len(ds.queries) == 323
+    # NFCorpus grades relevance 1 or 2, which nDCG uses to reward the more relevant documents.
+    grades = {grade for judged in ds.qrels.values() for grade in judged.values()}
+    assert grades == {1, 2}
