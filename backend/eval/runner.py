@@ -6,7 +6,7 @@ import json
 import threading
 import time
 from dataclasses import asdict, dataclass, field
-from functools import lru_cache
+from functools import cache
 from pathlib import Path
 
 from data.loaders import Dataset, documents_for_indexing, load_dataset
@@ -46,7 +46,7 @@ def _saved_report(dataset_name: str, retriever_name: str, k: int) -> Path:
     return EVAL_CACHE / f"v{EVAL_VERSION}-{dataset_name}-{retriever_name}-k{k}.json"
 
 
-def load_report(dataset_name: str, retriever_name: str, k: int) -> "RetrieverReport | None":
+def load_report(dataset_name: str, retriever_name: str, k: int) -> RetrieverReport | None:
     path = _saved_report(dataset_name, retriever_name, k)
     if not path.exists():
         return None
@@ -55,12 +55,12 @@ def load_report(dataset_name: str, retriever_name: str, k: int) -> "RetrieverRep
     return RetrieverReport(**data)
 
 
-def save_report(dataset_name: str, k: int, report: "RetrieverReport") -> None:
+def save_report(dataset_name: str, k: int, report: RetrieverReport) -> None:
     EVAL_CACHE.mkdir(parents=True, exist_ok=True)
     _saved_report(dataset_name, report.retriever, k).write_text(json.dumps(asdict(report)))
 
 
-@lru_cache(maxsize=None)
+@cache
 def dataset(name: str) -> Dataset:
     return load_dataset(name)
 
@@ -68,7 +68,7 @@ def dataset(name: str) -> Dataset:
 _index_lock = threading.Lock()
 
 
-@lru_cache(maxsize=None)
+@cache
 def _indexed(dataset_name: str, retriever_name: str) -> Retriever:
     retriever = build_retriever(retriever_name)
     retriever.index(documents_for_indexing(dataset(dataset_name)), cache_key=dataset_name)

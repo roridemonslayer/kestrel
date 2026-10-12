@@ -39,7 +39,7 @@ class Dataset:
     qrels: dict[str, dict[str, int]]  # query_id -> {doc_id: relevance}, relevance > 0 means relevant
 
 
-def documents_for_indexing(ds: "Dataset") -> dict[str, str]:
+def documents_for_indexing(ds: Dataset) -> dict[str, str]:
     """doc_id -> the text a retriever should index: the title followed by the body."""
     return {doc_id: f"{doc['title']}. {doc['text']}".strip(". ") for doc_id, doc in ds.corpus.items()}
 
@@ -85,11 +85,7 @@ def load_dataset(name: str, split: str = "test") -> Dataset:
                 qrels.setdefault(query_id, {})[doc_id] = int(score)
 
     # queries.jsonl holds every split's queries; keep only the ones judged in this split.
-    queries = {
-        row["_id"]: row["text"]
-        for row in _read_jsonl(folder / "queries.jsonl")
-        if row["_id"] in qrels
-    }
+    queries = {row["_id"]: row["text"] for row in _read_jsonl(folder / "queries.jsonl") if row["_id"] in qrels}
     return Dataset(name=name, corpus=corpus, queries=queries, qrels=qrels)
 
 

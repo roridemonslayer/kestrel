@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Callable
+from collections.abc import Callable
 
 from retrieval.base import Retriever
 from retrieval.bm25 import BM25Retriever
@@ -13,7 +13,10 @@ from retrieval.rerank import RerankRetriever
 REGISTRY: dict[str, tuple[str, Callable[[], Retriever]]] = {
     "bm25": ("BM25 keyword search (rank_bm25)", BM25Retriever),
     "dense": ("Dense embeddings, all-MiniLM-L6-v2, cosine similarity", DenseRetriever),
-    "hybrid": ("BM25 + dense fused with Reciprocal Rank Fusion", lambda: HybridRetriever([BM25Retriever(), DenseRetriever()])),
+    "hybrid": (
+        "BM25 + dense fused with Reciprocal Rank Fusion",
+        lambda: HybridRetriever([BM25Retriever(), DenseRetriever()]),
+    ),
     "hybrid+rerank": (
         "Hybrid top 50 re-scored by a cross-encoder (ms-marco-MiniLM-L-6-v2)",
         lambda: RerankRetriever(HybridRetriever([BM25Retriever(), DenseRetriever()])),

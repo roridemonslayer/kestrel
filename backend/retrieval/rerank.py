@@ -9,14 +9,14 @@ but far too slow to run over every document, so it only re-scores the top
 
 from __future__ import annotations
 
-from functools import lru_cache
+from functools import cache
 
 from retrieval.base import Retriever, SearchResult
 
 DEFAULT_MODEL = "cross-encoder/ms-marco-MiniLM-L-6-v2"
 
 
-@lru_cache(maxsize=None)
+@cache
 def load_cross_encoder(model_name: str):
     from sentence_transformers import CrossEncoder
 
@@ -41,5 +41,5 @@ class RerankRetriever(Retriever):
             return []
         model = load_cross_encoder(self.model_name)
         scores = model.predict([(query, self.texts[c.doc_id]) for c in candidates], show_progress_bar=False)
-        reranked = sorted(zip(candidates, scores), key=lambda pair: pair[1], reverse=True)[:k]
+        reranked = sorted(zip(candidates, scores, strict=True), key=lambda pair: pair[1], reverse=True)[:k]
         return [SearchResult(c.doc_id, float(score)) for c, score in reranked]

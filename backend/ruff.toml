@@ -1,0 +1,15 @@
+line-length = 120
+target-version = "py312"
+
+[lint]
+# pycodestyle, pyflakes, import sorting, bugbear, pyupgrade, simplify
+select = ["E", "F", "I", "B", "UP", "SIM"]
+# a space-separated word list .split() reads better than a long list literal
+ignore = ["SIM905"]
+
+[lint.per-file-ignores]
+# metrics.py spells out each loop on purpose so it reads like a lesson
+"eval/metrics.py" = ["SIM"]
+
+[format]
+quote-style = "double"
