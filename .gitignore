@@ -1,0 +1,9 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+# downloaded datasets and cached indexes/embeddings
+.cache/
+node_modules/
+frontend/dist/
+.DS_Store
