@@ -50,8 +50,7 @@ class BM25Retriever(Retriever):
         if self.bm25 is None:
             raise RuntimeError("Call index() before search()")
         scores = self.bm25.get_scores(tokenize(query))
-        k = min(k, len(scores))
-        # argpartition finds the top k without sorting everything, then only those k get sorted.
-        top = np.argpartition(-scores, k - 1)[:k]
-        top = top[np.argsort(-scores[top])]
+        # Highest score first; equal scores are broken by document order, so the ranking is the
+        # same on every machine (argpartition/argsort order ties differently across numpy builds).
+        top = np.lexsort((np.arange(len(scores)), -scores))[:k]
         return [SearchResult(self.doc_ids[i], float(scores[i])) for i in top if scores[i] > 0]

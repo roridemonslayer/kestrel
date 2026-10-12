@@ -14,6 +14,8 @@ import csv
 import io
 import json
 import ssl
+import time
+import urllib.error
 import urllib.request
 import zipfile
 from dataclasses import dataclass
@@ -52,8 +54,18 @@ def _download(name: str) -> Path:
     print(f"Downloading {name} from BEIR...")
     # certifi's CA bundle, since python.org builds of Python on macOS ship without one.
     context = ssl.create_default_context(cafile=certifi.where())
-    with urllib.request.urlopen(BEIR_URL.format(name=name), context=context) as response:
-        archive = zipfile.ZipFile(io.BytesIO(response.read()))
+    # The BEIR host sometimes refuses or drops connections, so retry a few times with a growing wait.
+    for attempt in range(1, 5):
+        try:
+            with urllib.request.urlopen(BEIR_URL.format(name=name), context=context, timeout=60) as response:
+                archive = zipfile.ZipFile(io.BytesIO(response.read()))
+            break
+        except (urllib.error.URLError, TimeoutError, ConnectionError) as error:
+            if attempt == 4:
+                raise RuntimeError(f"Couldn't download {name} from BEIR after {attempt} tries") from error
+            wait = 5 * attempt
+            print(f"Download failed ({error}); retrying in {wait}s...")
+            time.sleep(wait)
     # The zip holds a single top-level folder named after the dataset.
     archive.extractall(CACHE_DIR)
     return folder

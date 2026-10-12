@@ -1,5 +1,7 @@
 # kestrel
 
+[![CI](https://github.com/roridemonslayer/kestrel/actions/workflows/ci.yml/badge.svg)](https://github.com/roridemonslayer/kestrel/actions/workflows/ci.yml)
+
 ![Leaderboard](docs/leaderboard.png)
 
 A test bench for search quality. Pick a dataset, run its queries through several retrievers (BM25, dense embeddings, hybrid), and compare them with standard IR metrics (recall@k, MRR, nDCG@k) and latency.

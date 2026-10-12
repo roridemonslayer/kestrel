@@ -68,7 +68,7 @@ class DenseRetriever(Retriever):
             raise RuntimeError("Call index() before search()")
         query_vector = self._encode([query])[0]
         scores = self.embeddings @ query_vector  # cosine similarity with every document at once
-        k = min(k, len(scores))
-        top = np.argpartition(-scores, k - 1)[:k]
-        top = top[np.argsort(-scores[top])]
+        # Highest score first; equal scores are broken by document order, so the ranking is the
+        # same on every machine (argpartition/argsort order ties differently across numpy builds).
+        top = np.lexsort((np.arange(len(scores)), -scores))[:k]
         return [SearchResult(self.doc_ids[i], float(scores[i])) for i in top]
