@@ -9,6 +9,7 @@ from retrieval.bm25 import BM25Retriever
 from retrieval.dense import DenseRetriever
 from retrieval.hybrid import HybridRetriever
 from retrieval.rerank import RerankRetriever
+from retrieval.scratch_hnsw import ScratchHNSWRetriever, load_engine
 
 REGISTRY: dict[str, tuple[str, Callable[[], Retriever]]] = {
     "bm25": ("BM25 keyword search (rank_bm25)", BM25Retriever),
@@ -22,6 +23,10 @@ REGISTRY: dict[str, tuple[str, Callable[[], Retriever]]] = {
         lambda: RerankRetriever(HybridRetriever([BM25Retriever(), DenseRetriever()])),
     ),
 }
+
+# Only offered when the from-scratch engine is checked out next to kestrel.
+if load_engine() is not None:
+    REGISTRY["hnsw"] = ("Rori's from-scratch HNSW (pure Python) over the MiniLM embeddings", ScratchHNSWRetriever)
 
 
 def build_retriever(name: str) -> Retriever:

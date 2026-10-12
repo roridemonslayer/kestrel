@@ -61,5 +61,6 @@ export const LABELS: Record<string, string> = {
   dense: 'Dense',
   hybrid: 'Hybrid',
   'hybrid+rerank': 'Hybrid + rerank',
+  hnsw: 'HNSW (scratch)',
 }
 export const label = (name: string) => LABELS[name] ?? name

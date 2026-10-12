@@ -14,6 +14,7 @@ export const SHADES: Record<string, string> = {
   hybrid: '#c4c4c4',
   bm25: '#8a8a8a',
   dense: '#555555',
+  hnsw: '#3a3a3a',
 }
 export const shade = (name: string) => SHADES[name] ?? '#777777'
 
