@@ -39,7 +39,7 @@ class RetrieverReport:
 # Finished evaluations are saved here so a restart doesn't re-run them (the reranker takes minutes).
 # Bump EVAL_VERSION whenever retriever or metric code changes in a way that changes the numbers.
 EVAL_CACHE = Path(__file__).resolve().parents[2] / ".cache" / "evals"
-EVAL_VERSION = 1
+EVAL_VERSION = 2
 
 
 def _saved_report(dataset_name: str, retriever_name: str, k: int) -> Path:
