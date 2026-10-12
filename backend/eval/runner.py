@@ -1,0 +1,93 @@
+"""Run every query of a dataset through every chosen retriever and score the results."""
+
+from __future__ import annotations
+
+import time
+from dataclasses import dataclass, field
+from functools import lru_cache
+
+from data.loaders import Dataset, documents_for_indexing, load_dataset
+from eval.metrics import mean, ndcg_at_k, recall_at_k, reciprocal_rank
+from retrieval.base import Retriever
+from retrieval.registry import build_retriever
+
+
+@dataclass
+class QueryScore:
+    query_id: str
+    recall: float
+    rr: float
+    ndcg: float
+    latency_ms: float
+    top_ids: list[str]
+
+
+@dataclass
+class RetrieverReport:
+    retriever: str
+    recall: float
+    mrr: float
+    ndcg: float
+    p50_ms: float
+    p95_ms: float
+    per_query: list[QueryScore] = field(default_factory=list)
+
+
+@lru_cache(maxsize=None)
+def dataset(name: str) -> Dataset:
+    return load_dataset(name)
+
+
+@lru_cache(maxsize=None)
+def indexed_retriever(dataset_name: str, retriever_name: str) -> Retriever:
+    """Build (or load from the disk cache) a retriever's index once per process."""
+    retriever = build_retriever(retriever_name)
+    retriever.index(documents_for_indexing(dataset(dataset_name)), cache_key=dataset_name)
+    return retriever
+
+
+def percentile(values: list[float], pct: float) -> float:
+    """Nearest-rank percentile: the value below which pct% of the measurements fall."""
+    if not values:
+        return 0.0
+    ordered = sorted(values)
+    index = max(0, min(len(ordered) - 1, round(pct / 100 * len(ordered)) - 1))
+    return ordered[index]
+
+
+def evaluate(dataset_name: str, retriever_names: list[str], k: int = 10) -> list[RetrieverReport]:
+    ds = dataset(dataset_name)
+    reports = []
+    for name in retriever_names:
+        retriever = indexed_retriever(dataset_name, name)
+        retriever.search("warm up", k)  # the first call can pay one-time costs (e.g. loading a model)
+        per_query = []
+        for query_id, query in ds.queries.items():
+            start = time.perf_counter()
+            results = retriever.search(query, k)
+            latency_ms = (time.perf_counter() - start) * 1000
+            ranked = [r.doc_id for r in results]
+            relevant = ds.qrels[query_id]
+            per_query.append(
+                QueryScore(
+                    query_id=query_id,
+                    recall=recall_at_k(ranked, relevant, k),
+                    rr=reciprocal_rank(ranked, relevant, k),
+                    ndcg=ndcg_at_k(ranked, relevant, k),
+                    latency_ms=latency_ms,
+                    top_ids=ranked,
+                )
+            )
+        latencies = [q.latency_ms for q in per_query]
+        reports.append(
+            RetrieverReport(
+                retriever=name,
+                recall=mean([q.recall for q in per_query]),
+                mrr=mean([q.rr for q in per_query]),
+                ndcg=mean([q.ndcg for q in per_query]),
+                p50_ms=percentile(latencies, 50),
+                p95_ms=percentile(latencies, 95),
+                per_query=per_query,
+            )
+        )
+    return reports
