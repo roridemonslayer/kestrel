@@ -12,7 +12,7 @@ It's also the start of a shared retrieval layer: the code in `backend/retrieval/
 - [x] Eval runner + CLI
 - [x] Dense retriever (all-MiniLM-L6-v2, embeddings cached to disk)
 - [x] Hybrid (Reciprocal Rank Fusion)
-- [ ] API
+- [x] API (FastAPI)
 - [ ] Web UI
 
 ## Results (SciFact, 300 test queries, k = 10)

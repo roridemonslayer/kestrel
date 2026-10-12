@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import threading
 import time
 from dataclasses import dataclass, field
 from functools import lru_cache
@@ -38,12 +39,23 @@ def dataset(name: str) -> Dataset:
     return load_dataset(name)
 
 
+_index_lock = threading.Lock()
+
+
 @lru_cache(maxsize=None)
-def indexed_retriever(dataset_name: str, retriever_name: str) -> Retriever:
-    """Build (or load from the disk cache) a retriever's index once per process."""
+def _indexed(dataset_name: str, retriever_name: str) -> Retriever:
     retriever = build_retriever(retriever_name)
     retriever.index(documents_for_indexing(dataset(dataset_name)), cache_key=dataset_name)
     return retriever
+
+
+def indexed_retriever(dataset_name: str, retriever_name: str) -> Retriever:
+    """Build (or load from the disk cache) a retriever's index once per process.
+
+    The lock stops two web requests from building the same index at the same time.
+    """
+    with _index_lock:
+        return _indexed(dataset_name, retriever_name)
 
 
 def percentile(values: list[float], pct: float) -> float:
