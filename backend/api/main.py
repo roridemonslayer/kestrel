@@ -33,6 +33,7 @@ app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], all
 
 # A full evaluation takes a while, so results are kept per (dataset, retriever, k) for the life of the server.
 _eval_cache: dict[tuple[str, str, int], RetrieverReport] = {}
+_eval_lock = threading.Lock()  # one evaluation at a time, so concurrent requests never redo the same work
 
 
 def _check(dataset_name: str, retriever_names: list[str]) -> None:
@@ -62,6 +63,15 @@ def list_queries(dataset_name: str):
     return [{"id": qid, "text": text, "relevant": list(ds.qrels[qid])} for qid, text in ds.queries.items()]
 
 
+@app.get("/datasets/{dataset_name}/docs")
+def get_docs(dataset_name: str, ids: str):
+    """Titles and snippets for a comma-separated list of doc ids."""
+    _check(dataset_name, ["bm25"])
+    ds = dataset(dataset_name)
+    wanted = [i for i in ids.split(",") if i in ds.corpus][:100]
+    return {i: {"title": ds.corpus[i]["title"], "snippet": _snippet(ds.corpus[i]["text"])} for i in wanted}
+
+
 class EvaluateRequest(BaseModel):
     dataset: str = "scifact"
     retrievers: list[str] = Field(default_factory=lambda: list(REGISTRY))
@@ -71,10 +81,11 @@ class EvaluateRequest(BaseModel):
 @app.post("/evaluate")
 def run_evaluation(req: EvaluateRequest):
     _check(req.dataset, req.retrievers)
-    missing = [r for r in req.retrievers if (req.dataset, r, req.k) not in _eval_cache]
-    if missing:
-        for report in evaluate(req.dataset, missing, req.k):
-            _eval_cache[(req.dataset, report.retriever, req.k)] = report
+    with _eval_lock:
+        missing = [r for r in req.retrievers if (req.dataset, r, req.k) not in _eval_cache]
+        if missing:
+            for report in evaluate(req.dataset, missing, req.k):
+                _eval_cache[(req.dataset, report.retriever, req.k)] = report
     ds = dataset(req.dataset)
     reports = [_eval_cache[(req.dataset, r, req.k)] for r in req.retrievers]
     return {
