@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { api, type Evaluation, type Named } from './api'
+import { api, label, type Evaluation, type Named } from './api'
 import Leaderboard from './pages/Leaderboard'
 import LiveSearch from './pages/LiveSearch'
 import QueryExplorer from './pages/QueryExplorer'
@@ -23,6 +23,7 @@ export default function App() {
   const [retrievers, setRetrievers] = useState<Named[]>([])
   const [dataset, setDataset] = useState('scifact')
   const [k, setK] = useState(10)
+  const [hidden, setHidden] = useState<string[]>([]) // retrievers switched off in the header
   // Results are stored with the dataset and k they belong to, so switching either shows the loading state.
   const [loaded, setLoaded] = useState<{ key: string; evaluation: Evaluation | null; error: string } | null>(null)
 
@@ -52,10 +53,15 @@ export default function App() {
   }, [dataset, k, retrievers])
 
   const current = loaded?.key === `${dataset}|${k}` ? loaded : null
-  const evaluation = current?.evaluation ?? null
+  const names = retrievers.map((r) => r.name).filter((n) => !hidden.includes(n))
+  // Every retriever is evaluated once; switching one off only filters what the pages show.
+  const evaluation = current?.evaluation
+    ? { ...current.evaluation, retrievers: current.evaluation.retrievers.filter((r) => names.includes(r.name)) }
+    : null
   const evalError = current?.error ?? ''
-  const names = retrievers.map((r) => r.name)
   const props = { dataset, k, evaluation, evalError, retrievers }
+  const toggle = (name: string) =>
+    setHidden((h) => (h.includes(name) ? h.filter((n) => n !== name) : names.length > 1 ? [...h, name] : h))
 
   return (
     <>
@@ -75,6 +81,19 @@ export default function App() {
           ))}
         </nav>
         <div className="controls">
+          <div className="pills" role="group" aria-label="Retrievers shown">
+            {retrievers.map((r) => (
+              <button
+                key={r.name}
+                className={`pill ${hidden.includes(r.name) ? '' : 'on'}`}
+                onClick={() => toggle(r.name)}
+                title={r.description}
+                aria-pressed={!hidden.includes(r.name)}
+              >
+                {label(r.name)}
+              </button>
+            ))}
+          </div>
           <label className="control">
             dataset
             <select value={dataset} onChange={(e) => setDataset(e.target.value)}>
