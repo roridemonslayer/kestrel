@@ -21,6 +21,20 @@ type Filter = (typeof FILTERS)[number]['id']
 
 type Row = { id: string; text: string; scores: Record<string, number>; delta: number }
 
+/** Quote a CSV field when it contains a comma, quote or newline (query texts often do). */
+const csvField = (value: string | number) => {
+  const text = String(value)
+  return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text
+}
+
+function downloadCsv(filename: string, header: string[], rows: (string | number)[][]) {
+  const csv = [header, ...rows].map((r) => r.map(csvField).join(',')).join('\n')
+  const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }))
+  const link = Object.assign(document.createElement('a'), { href: url, download: filename })
+  link.click()
+  URL.revokeObjectURL(url)
+}
+
 export default function QueryExplorer({ dataset, k, evaluation, evalError }: PageProps) {
   const names = evaluation?.retrievers.map((r) => r.name) ?? []
   const [metric, setMetric] = useState<Metric>('ndcg')
@@ -130,6 +144,18 @@ export default function QueryExplorer({ dataset, k, evaluation, evalError }: Pag
             <span className="muted" style={{ marginLeft: 'auto', fontSize: 12 }}>
               {visible.length} of {rows.length} queries
             </span>
+            <button
+              className="btn"
+              onClick={() =>
+                downloadCsv(
+                  `${dataset}-${metric}@${k}-${filter}.csv`,
+                  ['query_id', 'query', ...names.map((n) => `${n}_${metric}@${k}`), `${a}_minus_${b}`],
+                  visible.map((r) => [r.id, r.text, ...names.map((n) => r.scores[n].toFixed(4)), r.delta.toFixed(4)]),
+                )
+              }
+            >
+              Download CSV
+            </button>
           </div>
           <table>
             <thead>
