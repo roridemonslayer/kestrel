@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import threading
 import time
+from contextlib import asynccontextmanager
 from dataclasses import asdict
 
 from fastapi import FastAPI, HTTPException
@@ -13,7 +15,20 @@ from data.loaders import DATASETS
 from eval.runner import RetrieverReport, dataset, evaluate, indexed_retriever
 from retrieval.registry import REGISTRY
 
-app = FastAPI(title="kestrel", description="Compare retrievers on BEIR datasets")
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    # Load the default dataset's indexes and model in the background, so the first request isn't slow.
+    def warm():
+        for name in REGISTRY:
+            indexed_retriever("scifact", name)
+        # Pre-run the default leaderboard so the UI's first load is instant.
+        run_evaluation(EvaluateRequest())
+
+    threading.Thread(target=warm, daemon=True).start()
+    yield
+
+
+app = FastAPI(title="kestrel", description="Compare retrievers on BEIR datasets", lifespan=lifespan)
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
 # A full evaluation takes a while, so results are kept per (dataset, retriever, k) for the life of the server.

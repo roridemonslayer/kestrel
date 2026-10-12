@@ -46,6 +46,8 @@ _index_lock = threading.Lock()
 def _indexed(dataset_name: str, retriever_name: str) -> Retriever:
     retriever = build_retriever(retriever_name)
     retriever.index(documents_for_indexing(dataset(dataset_name)), cache_key=dataset_name)
+    # The first search can pay one-time costs (loading a model), so pay them here, not in a timed search.
+    retriever.search("warm up", 1)
     return retriever
 
 
@@ -72,7 +74,6 @@ def evaluate(dataset_name: str, retriever_names: list[str], k: int = 10) -> list
     reports = []
     for name in retriever_names:
         retriever = indexed_retriever(dataset_name, name)
-        retriever.search("warm up", k)  # the first call can pay one-time costs (e.g. loading a model)
         per_query = []
         for query_id, query in ds.queries.items():
             start = time.perf_counter()
