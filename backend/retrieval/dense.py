@@ -9,7 +9,7 @@ the highest cosine similarity with the query's vector.
 from __future__ import annotations
 
 import json
-from functools import lru_cache
+from functools import cache
 
 import numpy as np
 
@@ -18,7 +18,7 @@ from retrieval.base import Retriever, SearchResult, cache_path
 DEFAULT_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
 
 
-@lru_cache(maxsize=None)
+@cache
 def load_model(model_name: str):
     """Load a model once per process, so every DenseRetriever (including the one inside hybrid) shares it."""
     from sentence_transformers import SentenceTransformer

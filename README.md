@@ -73,6 +73,7 @@ uv pip install --python .venv/bin/python -r backend/requirements.txt
 cd backend
 ../.venv/bin/python -m data.loaders scifact   # downloads SciFact once, prints its size
 ../.venv/bin/python -m pytest
+../.venv/bin/ruff check . && ../.venv/bin/ruff format --check .   # lint + formatting
 ../.venv/bin/python -m eval.cli --dataset scifact --k 10   # prints the results table (add --format markdown or json)
 ```
 

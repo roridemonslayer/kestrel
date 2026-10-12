@@ -15,6 +15,7 @@ from data.loaders import DATASETS
 from eval.runner import RetrieverReport, dataset, evaluate, indexed_retriever, load_report, save_report
 from retrieval.registry import REGISTRY
 
+
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
     # Load the default dataset's indexes and model in the background, so the first request isn't slow.

@@ -15,7 +15,9 @@ from retrieval.registry import REGISTRY
 
 
 def text_table(dataset: str, k: int, reports: list[RetrieverReport]) -> str:
-    header = f"{'retriever':<15}{'recall@' + str(k):>11}{'MRR@' + str(k):>9}{'nDCG@' + str(k):>10}{'p50 ms':>9}{'p95 ms':>9}"
+    header = (
+        f"{'retriever':<15}{'recall@' + str(k):>11}{'MRR@' + str(k):>9}{'nDCG@' + str(k):>10}{'p50 ms':>9}{'p95 ms':>9}"
+    )
     lines = [f"\n{dataset}, {len(reports[0].per_query)} queries\n", header, "-" * len(header)]
     for r in reports:
         lines.append(f"{r.retriever:<15}{r.recall:>11.3f}{r.mrr:>9.3f}{r.ndcg:>10.3f}{r.p50_ms:>9.2f}{r.p95_ms:>9.2f}")
@@ -30,7 +32,8 @@ def markdown_table(k: int, reports: list[RetrieverReport]) -> str:
         "|---|---|---|---|---|---|",
     ]
     for r in reports:
-        lines.append(f"| {r.retriever} | {bold(r, 'recall')} | {bold(r, 'mrr')} | {bold(r, 'ndcg')} | {r.p50_ms:.1f} | {r.p95_ms:.1f} |")
+        scores = " | ".join(bold(r, m) for m in ("recall", "mrr", "ndcg"))
+        lines.append(f"| {r.retriever} | {scores} | {r.p50_ms:.1f} | {r.p95_ms:.1f} |")
     return "\n".join(lines)
 
 

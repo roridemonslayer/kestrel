@@ -38,7 +38,10 @@ class Retriever(ABC):
 
 
 def cache_path(retriever_name: str, cache_key: str, docs: dict[str, str], suffix: str) -> Path:
-    """Where to cache an index. The path includes a fingerprint of the documents, so a changed corpus never reuses a stale index."""
+    """Where to cache an index.
+
+    The path includes a fingerprint of the documents, so a changed corpus never reuses a stale index.
+    """
     fingerprint = hashlib.sha1()
     for doc_id in sorted(docs):
         fingerprint.update(doc_id.encode())

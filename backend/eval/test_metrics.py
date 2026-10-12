@@ -6,8 +6,8 @@ import pytest
 
 from eval.metrics import mean, ndcg_at_k, recall_at_k, reciprocal_rank
 
-
 # ---------- recall@k ----------
+
 
 def test_recall_finds_one_of_three():
     # Top 3 = d1, d2, d3. Relevant = d2, d4, d9. Only d2 is in the top 3 -> 1/3.
@@ -26,6 +26,7 @@ def test_recall_perfect_and_zero():
 
 # ---------- reciprocal rank (MRR) ----------
 
+
 def test_reciprocal_rank_first_hit_at_rank_three():
     # d5, d8 miss; d2 at rank 3 is the first hit -> 1/3. The later hit d1 doesn't matter.
     assert reciprocal_rank(["d5", "d8", "d2", "d1"], {"d2": 1, "d1": 1}, k=10) == pytest.approx(1 / 3)
@@ -41,6 +42,7 @@ def test_reciprocal_rank_hit_beyond_k_counts_as_zero():
 
 
 # ---------- nDCG@k ----------
+
 
 def test_ndcg_worked_example_from_docstring():
     # DCG  = 0 + 1/log2(3) + 1/log2(4) = 0.631 + 0.5   = 1.131
@@ -68,6 +70,7 @@ def test_ndcg_no_hits_is_zero():
 
 
 # ---------- averaging ----------
+
 
 def test_mean_of_per_query_scores():
     assert mean([1.0, 0.5, 0.0]) == pytest.approx(0.5)

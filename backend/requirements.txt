@@ -3,6 +3,7 @@ rank_bm25
 numpy
 sentence-transformers
 pytest
+ruff
 fastapi
 uvicorn[standard]
 httpx
