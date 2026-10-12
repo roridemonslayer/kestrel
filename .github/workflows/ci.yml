@@ -19,7 +19,15 @@ jobs:
       # The tests never load the embedding model, so CI skips sentence-transformers (and its large torch download).
       - run: pip install certifi rank_bm25 numpy pytest ruff fastapi "uvicorn[standard]" httpx
       - run: ruff check . && ruff format --check .
-      - uses: actions/cache@v4
+      # The loader stores datasets in <repo>/.cache/datasets. Restore them before the tests, and save them
+      # even when a later step fails, so a flaky download only has to succeed once.
+      - uses: actions/cache/restore@v4
+        with:
+          path: .cache/datasets
+          key: beir-datasets-v1
+      - run: python -c "from data.loaders import load_dataset; [load_dataset(n) for n in ('scifact', 'nfcorpus')]"
+      - uses: actions/cache/save@v4
+        if: always()
         with:
           path: .cache/datasets
           key: beir-datasets-v1
