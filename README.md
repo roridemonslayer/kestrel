@@ -8,7 +8,7 @@ It's also the start of a shared retrieval layer: the code in `backend/retrieval/
 
 - [x] BEIR dataset loader (SciFact)
 - [x] Retriever interface + BM25 (index cached to disk)
-- [ ] Metrics + tests
+- [x] Metrics (recall@k, MRR, nDCG@k in plain Python) + hand-checkable tests
 - [ ] Eval runner + CLI
 - [ ] Dense retriever
 - [ ] Hybrid (RRF)
