@@ -9,7 +9,12 @@ export type PageProps = {
 }
 
 // Monochrome series colors: the strongest retriever gets white, the rest step down to gray.
-export const SHADES: Record<string, string> = { hybrid: '#f2f2f2', bm25: '#9a9a9a', dense: '#5c5c5c' }
+export const SHADES: Record<string, string> = {
+  'hybrid+rerank': '#f2f2f2',
+  hybrid: '#c4c4c4',
+  bm25: '#8a8a8a',
+  dense: '#555555',
+}
 export const shade = (name: string) => SHADES[name] ?? '#777777'
 
 export const fmt = (n: number) => n.toFixed(3)

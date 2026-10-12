@@ -8,7 +8,8 @@ client = TestClient(app)
 def test_lists_datasets_and_retrievers():
     assert client.get("/datasets").json()[0]["name"] == "scifact"
     names = [r["name"] for r in client.get("/retrievers").json()]
-    assert names == ["bm25", "dense", "hybrid"]
+    assert names[:3] == ["bm25", "dense", "hybrid"]
+    assert "hybrid+rerank" in names
 
 
 def test_evaluate_bm25_matches_cli_numbers():

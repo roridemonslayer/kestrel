@@ -21,11 +21,14 @@ It's also the start of a shared retrieval layer: the code in `backend/retrieval/
 
 | Retriever | recall@10 | MRR@10 | nDCG@10 | p50 ms | p95 ms |
 |---|---|---|---|---|---|
-| Hybrid (BM25 + dense, RRF) | **0.815** | **0.655** | **0.689** | 39.8 | 119.0 |
+| Hybrid + cross-encoder rerank | **0.822** | **0.657** | **0.691** | 1467 | 3205 |
+| Hybrid (BM25 + dense, RRF) | 0.815 | 0.655 | 0.689 | 39.8 | 119.0 |
 | BM25 | 0.786 | 0.635 | 0.665 | 17.4 | 42.0 |
 | Dense (all-MiniLM-L6-v2) | 0.790 | 0.606 | 0.648 | 12.8 | 65.9 |
 
 BM25's nDCG@10 of 0.665 matches the BM25 baseline in the BEIR paper, and MiniLM's 0.648 matches its published SciFact score, which is a good check that the loader and metrics are right. Hybrid wins on every quality metric because keyword and semantic search fail on different queries. Latency is measured on a MacBook Air (M2); hybrid pays for running both retrievers.
+
+Reranking hybrid's top 50 with a cross-encoder (`ms-marco-MiniLM-L-6-v2`) barely helps here (+0.002 nDCG@10) while making each search about 45× slower. That model was trained on web search questions, not scientific claims, so on SciFact it mostly agrees with hybrid's order; a domain-matched reranker is the next thing to try.
 
 ### NFCorpus (323 test queries, k = 10)
 
@@ -57,6 +60,8 @@ backend/
   api/         FastAPI app
 frontend/      React + Vite + Recharts
 ```
+
+`retrieval/rerank.py` wraps any retriever with a cross-encoder second stage (retrieve, then rerank). Evaluations are saved under `.cache/evals/`, so restarts don't re-run them.
 
 Adding a retriever means implementing `index(docs)` and `search(query, k)` from `retrieval/base.py` and registering it in `retrieval/registry.py`. Indexes and embeddings are cached under `.cache/`, keyed by a fingerprint of the corpus.
 

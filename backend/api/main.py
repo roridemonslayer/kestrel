@@ -12,7 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 from data.loaders import DATASETS
-from eval.runner import RetrieverReport, dataset, evaluate, indexed_retriever
+from eval.runner import RetrieverReport, dataset, evaluate, indexed_retriever, load_report, save_report
 from retrieval.registry import REGISTRY
 
 @asynccontextmanager
@@ -82,10 +82,14 @@ class EvaluateRequest(BaseModel):
 def run_evaluation(req: EvaluateRequest):
     _check(req.dataset, req.retrievers)
     with _eval_lock:
+        for r in req.retrievers:
+            if (req.dataset, r, req.k) not in _eval_cache and (saved := load_report(req.dataset, r, req.k)):
+                _eval_cache[(req.dataset, r, req.k)] = saved
         missing = [r for r in req.retrievers if (req.dataset, r, req.k) not in _eval_cache]
         if missing:
             for report in evaluate(req.dataset, missing, req.k):
                 _eval_cache[(req.dataset, report.retriever, req.k)] = report
+                save_report(req.dataset, req.k, report)
     ds = dataset(req.dataset)
     reports = [_eval_cache[(req.dataset, r, req.k)] for r in req.retrievers]
     return {

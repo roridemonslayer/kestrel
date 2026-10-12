@@ -56,5 +56,10 @@ export const api = {
     call<Record<string, Doc>>(`/datasets/${dataset}/docs?ids=${encodeURIComponent(ids.join(','))}`),
 }
 
-export const LABELS: Record<string, string> = { bm25: 'BM25', dense: 'Dense', hybrid: 'Hybrid' }
+export const LABELS: Record<string, string> = {
+  bm25: 'BM25',
+  dense: 'Dense',
+  hybrid: 'Hybrid',
+  'hybrid+rerank': 'Hybrid + rerank',
+}
 export const label = (name: string) => LABELS[name] ?? name

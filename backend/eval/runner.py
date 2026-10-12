@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+import json
 import threading
 import time
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
 from functools import lru_cache
+from pathlib import Path
 
 from data.loaders import Dataset, documents_for_indexing, load_dataset
 from eval.metrics import mean, ndcg_at_k, recall_at_k, reciprocal_rank
@@ -32,6 +34,30 @@ class RetrieverReport:
     p50_ms: float
     p95_ms: float
     per_query: list[QueryScore] = field(default_factory=list)
+
+
+# Finished evaluations are saved here so a restart doesn't re-run them (the reranker takes minutes).
+# Bump EVAL_VERSION whenever retriever or metric code changes in a way that changes the numbers.
+EVAL_CACHE = Path(__file__).resolve().parents[2] / ".cache" / "evals"
+EVAL_VERSION = 1
+
+
+def _saved_report(dataset_name: str, retriever_name: str, k: int) -> Path:
+    return EVAL_CACHE / f"v{EVAL_VERSION}-{dataset_name}-{retriever_name}-k{k}.json"
+
+
+def load_report(dataset_name: str, retriever_name: str, k: int) -> "RetrieverReport | None":
+    path = _saved_report(dataset_name, retriever_name, k)
+    if not path.exists():
+        return None
+    data = json.loads(path.read_text())
+    data["per_query"] = [QueryScore(**q) for q in data["per_query"]]
+    return RetrieverReport(**data)
+
+
+def save_report(dataset_name: str, k: int, report: "RetrieverReport") -> None:
+    EVAL_CACHE.mkdir(parents=True, exist_ok=True)
+    _saved_report(dataset_name, report.retriever, k).write_text(json.dumps(asdict(report)))
 
 
 @lru_cache(maxsize=None)
