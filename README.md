@@ -10,8 +10,8 @@ It's also the start of a shared retrieval layer: the code in `backend/retrieval/
 - [x] Retriever interface + BM25 (index cached to disk)
 - [x] Metrics (recall@k, MRR, nDCG@k in plain Python) + hand-checkable tests
 - [x] Eval runner + CLI
-- [ ] Dense retriever
-- [ ] Hybrid (RRF)
+- [x] Dense retriever (all-MiniLM-L6-v2, embeddings cached to disk)
+- [x] Hybrid (Reciprocal Rank Fusion)
 - [ ] API
 - [ ] Web UI
 
@@ -19,9 +19,11 @@ It's also the start of a shared retrieval layer: the code in `backend/retrieval/
 
 | Retriever | recall@10 | MRR@10 | nDCG@10 | p50 ms | p95 ms |
 |---|---|---|---|---|---|
-| BM25 | 0.786 | 0.635 | 0.665 | 11.5 | 27.9 |
+| Hybrid (BM25 + dense, RRF) | **0.815** | **0.655** | **0.689** | 39.8 | 119.0 |
+| BM25 | 0.786 | 0.635 | 0.665 | 17.4 | 42.0 |
+| Dense (all-MiniLM-L6-v2) | 0.790 | 0.606 | 0.648 | 12.8 | 65.9 |
 
-BM25's nDCG@10 of 0.665 matches the BM25 baseline reported in the BEIR paper, which is a good check that the loader and metrics are right.
+BM25's nDCG@10 of 0.665 matches the BM25 baseline in the BEIR paper, and MiniLM's 0.648 matches its published SciFact score, which is a good check that the loader and metrics are right. Hybrid wins on every quality metric because keyword and semantic search fail on different queries. Latency is measured on a MacBook Air (M2); hybrid pays for running both retrievers.
 
 ## Setup
 
