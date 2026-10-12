@@ -4,8 +4,22 @@ import { ms } from '../format'
 
 type DatasetQuery = { id: string; text: string; relevant: string[] }
 
+/** The query and dataset-query id saved in the URL, e.g. #/search?q=vitamin+d&id=3 */
+function linkedQuery() {
+  const params = new URLSearchParams(window.location.hash.split('?')[1] ?? '')
+  return { q: params.get('q') ?? '', id: params.get('id') ?? undefined }
+}
+
+function rememberQuery(text: string, queryId?: string | null) {
+  const params = new URLSearchParams({ q: text })
+  if (queryId) params.set('id', queryId)
+  // replaceState updates the address bar without adding a history entry or re-rendering the app.
+  window.history.replaceState(null, '', `#/search?${params}`)
+}
+
 export default function LiveSearch({ dataset, k, retrievers }: { dataset: string; k: number; retrievers: string[] }) {
-  const [query, setQuery] = useState('')
+  const [query, setQuery] = useState(() => linkedQuery().q)
+  const [copied, setCopied] = useState(false)
   const [samples, setSamples] = useState<DatasetQuery[]>([])
   const [result, setResult] = useState<SearchResponse | null>(null)
   const [busy, setBusy] = useState(false)
@@ -23,12 +37,28 @@ export default function LiveSearch({ dataset, k, retrievers }: { dataset: string
     setBusy(true)
     setError('')
     try {
-      setResult(await api.search(text, dataset, retrievers, k, queryId))
+      const response = await api.search(text, dataset, retrievers, k, queryId)
+      setResult(response)
+      rememberQuery(text, response.query_id)
     } catch (e) {
       setError((e as Error).message)
     } finally {
       setBusy(false)
     }
+  }
+
+  // Opening a shared link runs its query right away.
+  useEffect(() => {
+    const { q, id } = linkedQuery()
+    if (q && retrievers.length) run(q, id)
+    // run only once the retrievers are known; later searches come from the form
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [retrievers.length])
+
+  async function copyLink() {
+    await navigator.clipboard.writeText(window.location.href)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 1500)
   }
 
   function randomQuery() {
@@ -73,7 +103,10 @@ export default function LiveSearch({ dataset, k, retrievers }: { dataset: string
           <p className="query-note">
             {result.query_id
               ? `Dataset query ${result.query_id}: ${result.relevant.length} relevant document${result.relevant.length === 1 ? '' : 's'} highlighted.`
-              : 'Custom query: there are no relevance judgments, so nothing is highlighted.'}
+              : 'Custom query: there are no relevance judgments, so nothing is highlighted.'}{' '}
+            <button type="button" className="linkish" onClick={copyLink}>
+              {copied ? 'Link copied' : 'Copy link to these results'}
+            </button>
           </p>
           <div className="columns" style={{ ['--n' as string]: result.columns.length }}>
             {result.columns.map((col) => (

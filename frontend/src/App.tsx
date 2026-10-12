@@ -12,7 +12,8 @@ const PAGES = [
 type Page = (typeof PAGES)[number]['id']
 
 function currentPage(): Page {
-  const id = window.location.hash.replace('#/', '')
+  // The hash looks like #/search?q=..., so the page id is the part before any query string.
+  const id = window.location.hash.replace('#/', '').split('?')[0]
   return PAGES.some((p) => p.id === id) ? (id as Page) : 'leaderboard'
 }
 

@@ -432,6 +432,16 @@ th.sorted {
   height: 42px;
 }
 
+.linkish {
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--text);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
 .query-note {
   margin: -8px 0 18px;
   color: var(--muted);
