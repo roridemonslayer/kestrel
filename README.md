@@ -25,8 +25,11 @@ It's also the start of a shared retrieval layer: the code in `backend/retrieval/
 | Hybrid (BM25 + dense, RRF) | 0.815 | 0.655 | 0.689 | 39.8 | 119.0 |
 | BM25 | 0.786 | 0.635 | 0.665 | 17.4 | 42.0 |
 | Dense (all-MiniLM-L6-v2) | 0.790 | 0.606 | 0.648 | 12.8 | 65.9 |
+| HNSW, built from scratch ([vector-search-engine](https://github.com/roridemonslayer/vector-search-engine)) | 0.773 | 0.596 | 0.637 | 43.0 | 148.2 |
 
 BM25's nDCG@10 of 0.665 matches the BM25 baseline in the BEIR paper, and MiniLM's 0.648 matches its published SciFact score, which is a good check that the loader and metrics are right. Hybrid wins on every quality metric because keyword and semantic search fail on different queries. Latency is measured on a MacBook Air (M2); hybrid pays for running both retrievers.
+
+My own [from-scratch HNSW engine](https://github.com/roridemonslayer/vector-search-engine) (pure Python, no numpy or FAISS) searches the same MiniLM embeddings approximately and keeps 98% of exact dense search's nDCG@10 (0.637 vs 0.648). It's slower here only because it's pure Python against numpy's vectorized math; it's plugged in to show a hand-built index holding up on real data. It appears when `vector-search-engine` is checked out next to `kestrel` (or set `KESTREL_HNSW_PATH`).
 
 Reranking hybrid's top 50 with a cross-encoder (`ms-marco-MiniLM-L-6-v2`) barely helps here (+0.002 nDCG@10) while making each search about 45× slower. That model was trained on web search questions, not scientific claims, so on SciFact it mostly agrees with hybrid's order; a domain-matched reranker is the next thing to try.
 
