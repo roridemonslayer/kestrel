@@ -9,9 +9,9 @@ from dataclasses import asdict, dataclass, field
 from functools import cache
 from pathlib import Path
 
-from data.loaders import Dataset, documents_for_indexing, load_dataset
+from data.loaders import DROP_SELF_MATCHES, Dataset, documents_for_indexing, load_dataset
 from eval.metrics import mean, ndcg_at_k, recall_at_k, reciprocal_rank
-from retrieval.base import Retriever
+from retrieval.base import Retriever, SearchResult
 from retrieval.registry import build_retriever
 
 
@@ -86,6 +86,14 @@ def indexed_retriever(dataset_name: str, retriever_name: str) -> Retriever:
         return _indexed(dataset_name, retriever_name)
 
 
+def search_dataset(ds: Dataset, retriever: Retriever, query: str, k: int, query_id: str | None) -> list[SearchResult]:
+    """Search for k results; in datasets whose queries are corpus documents, never return the query's own document."""
+    if query_id is None or ds.name not in DROP_SELF_MATCHES:
+        return retriever.search(query, k)
+    # Ask for one extra result so there are still k after the query's own document is dropped.
+    return [r for r in retriever.search(query, k + 1) if r.doc_id != query_id][:k]
+
+
 def percentile(values: list[float], pct: float) -> float:
     """Nearest-rank percentile: the value below which pct% of the measurements fall."""
     if not values:
@@ -103,7 +111,7 @@ def evaluate(dataset_name: str, retriever_names: list[str], k: int = 10) -> list
         per_query = []
         for query_id, query in ds.queries.items():
             start = time.perf_counter()
-            results = retriever.search(query, k)
+            results = search_dataset(ds, retriever, query, k, query_id)
             latency_ms = (time.perf_counter() - start) * 1000
             ranked = [r.doc_id for r in results]
             relevant = ds.qrels[query_id]
