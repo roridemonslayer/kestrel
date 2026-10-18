@@ -19,3 +19,12 @@ def test_nfcorpus_loads_with_graded_relevance():
     # NFCorpus grades relevance 1 or 2, which nDCG uses to reward the more relevant documents.
     grades = {grade for judged in ds.qrels.values() for grade in judged.values()}
     assert grades == {1, 2}
+
+
+def test_arguana_queries_are_corpus_documents():
+    ds = load_dataset("arguana")
+    assert len(ds.corpus) == 8674
+    assert len(ds.queries) == 1406
+    # Most queries are arguments taken from the corpus, which is why their own document is dropped from results.
+    assert sum(query_id in ds.corpus for query_id in ds.queries) == 1298
+    assert not any(query_id in judged for query_id, judged in ds.qrels.items())

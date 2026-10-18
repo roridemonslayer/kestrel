@@ -30,7 +30,13 @@ CACHE_DIR = Path(__file__).resolve().parents[2] / ".cache" / "datasets"
 DATASETS = {
     "scifact": "SciFact: scientific claims checked against research abstracts",
     "nfcorpus": "NFCorpus: nutrition questions answered from medical papers",
+    "arguana": "ArguAna: find the best counter-argument to a debate argument",
 }
+
+# In these datasets every query is also a document in the corpus (ArguAna's queries are arguments
+# taken from the corpus), so a retriever's top hit is the query itself. BEIR's evaluation drops a
+# query's own document from its results, and so do we, so the scores compare with published ones.
+DROP_SELF_MATCHES = {"arguana"}
 
 
 @dataclass

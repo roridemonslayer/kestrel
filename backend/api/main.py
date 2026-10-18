@@ -12,7 +12,15 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 from data.loaders import DATASETS
-from eval.runner import RetrieverReport, dataset, evaluate, indexed_retriever, load_report, save_report
+from eval.runner import (
+    RetrieverReport,
+    dataset,
+    evaluate,
+    indexed_retriever,
+    load_report,
+    save_report,
+    search_dataset,
+)
 from retrieval.registry import REGISTRY
 
 
@@ -138,7 +146,7 @@ def search(req: SearchRequest):
     for name in req.retrievers:
         retriever = indexed_retriever(req.dataset, name)
         start = time.perf_counter()
-        results = retriever.search(req.query, req.k)
+        results = search_dataset(ds, retriever, req.query, req.k, query_id)
         latency_ms = (time.perf_counter() - start) * 1000
         columns.append(
             {

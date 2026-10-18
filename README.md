@@ -10,7 +10,7 @@ It's also the start of a shared retrieval layer: the code in `backend/retrieval/
 
 ## Status
 
-- [x] BEIR dataset loader (SciFact)
+- [x] BEIR dataset loader (SciFact, NFCorpus, ArguAna)
 - [x] Retriever interface + BM25 (index cached to disk)
 - [x] Metrics (recall@k, MRR, nDCG@k in plain Python) + hand-checkable tests
 - [x] Eval runner + CLI
@@ -44,6 +44,22 @@ Reranking hybrid's top 50 with a cross-encoder (`ms-marco-MiniLM-L-6-v2`) barely
 | BM25 | 0.152 | 0.515 | 0.308 | 3.3 | 15.9 |
 
 NFCorpus queries have dozens of relevant documents each, so recall@10 is low for every retriever by design; nDCG uses its graded (1 or 2) judgments.
+
+### ArguAna (1,406 test queries, k = 10)
+
+| Retriever | recall@10 | MRR@10 | nDCG@10 | p50 ms | p95 ms |
+|---|---|---|---|---|---|
+| Hybrid (BM25 + dense, RRF) | **0.812** | **0.435** | **0.524** | 326.0 | 639.7 |
+| Dense (all-MiniLM-L6-v2) | 0.771 | 0.394 | 0.483 | 17.2 | 30.4 |
+| BM25 | 0.747 | 0.392 | 0.477 | 307.6 | 632.0 |
+| HNSW, built from scratch | 0.763 | 0.389 | 0.477 | 38.8 | 48.7 |
+| Hybrid + cross-encoder rerank | 0.706 | 0.343 | 0.428 | 955.3 | 1201.2 |
+
+Each ArguAna query is a debate argument, and the one relevant document is its best counter-argument. The queries are long (174 words at the median), which is why BM25 is slow here: it scores every word of the query against every document.
+
+- **A query is its own top hit.** 1,298 of the queries are documents in the corpus, so every retriever ranks the query first. BEIR's evaluation drops a query's own document from its results, and so does kestrel for datasets in `DROP_SELF_MATCHES` (eval and live search). Like BEIR, it matches by id, so the 108 queries whose text appears in the corpus under a different id still find that copy, which only pushes the real answer down.
+- **Dense matches its published score.** MiniLM's 0.483 is close to its MTEB ArguAna score (0.502). BM25 scores higher than the BEIR paper's (0.315; 0.414 in later Pyserini runs) because it uses different settings: k1 = 1.5, b = 0.75, no stemming, and rank_bm25's IDF.
+- **The reranker hurts.** It costs 0.096 nDCG@10. `ms-marco-MiniLM-L-6-v2` learned to find passages that answer a question, so it likely favors arguments on the same side as the query over the counter-argument (and it truncates these long query + document pairs at 512 tokens). The BEIR paper saw the same thing with its MS MARCO cross-encoder on ArguAna. Whether a reranker helps depends on the task it was trained for.
 
 ## The app
 
