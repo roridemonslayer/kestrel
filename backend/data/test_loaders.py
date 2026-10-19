@@ -28,3 +28,12 @@ def test_arguana_queries_are_corpus_documents():
     # Most queries are arguments taken from the corpus, which is why their own document is dropped from results.
     assert sum(query_id in ds.corpus for query_id in ds.queries) == 1298
     assert not any(query_id in judged for query_id, judged in ds.qrels.items())
+
+
+def test_fiqa_loads_untitled_forum_posts():
+    ds = load_dataset("fiqa")
+    assert len(ds.corpus) == 57638
+    assert len(ds.queries) == 648
+    assert sum(len(judged) for judged in ds.qrels.values()) == 1706
+    # FiQA's documents are forum answers with no titles, so retrievers index the body text alone.
+    assert not any(doc["title"] for doc in ds.corpus.values())
