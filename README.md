@@ -68,6 +68,7 @@ Each ArguAna query is a debate argument, and the one relevant document is its be
 | Hybrid + cross-encoder rerank | **0.451** | **0.448** | **0.376** | 769.1 | 1218.2 |
 | Dense (all-MiniLM-L6-v2) | 0.439 | 0.446 | 0.369 | 16.8 | 37.3 |
 | Hybrid (BM25 + dense, RRF) | 0.419 | 0.413 | 0.342 | 152.4 | 312.0 |
+| HNSW, built from scratch | 0.394 | 0.411 | 0.332 | 52.8 | 69.1 |
 | BM25 | 0.295 | 0.283 | 0.231 | 123.6 | 228.1 |
 
 FiQA asks personal finance questions ("Where should I park my rainy-day / emergency fund?") and answers them with posts from finance forums. The 57,638 posts have no titles, and the median query has 2 relevant answers.
@@ -75,6 +76,7 @@ FiQA asks personal finance questions ("Where should I park my rainy-day / emerge
 - **Both baselines match published scores.** BM25's 0.231 is close to the BEIR paper's 0.236, and MiniLM's 0.369 matches its MTEB FiQA score.
 - **Hybrid loses to dense.** This is the only dataset here where fusing BM25 in hurts (-0.027 nDCG@10). Answers often use different words than the question (one relevant answer to the rainy-day question never says "park" or "rainy-day"; it compares ING, SmartyPig and CD rates), so BM25 trails dense by 0.138, and RRF weighs both lists equally, letting BM25's misses push down dense's good results. Fusion pays off when both retrievers are about as good but fail on different queries, as on SciFact.
 - **The reranker helps here.** It adds 0.034 over hybrid and edges out dense. FiQA's questions look like the web search questions `ms-marco-MiniLM-L-6-v2` was trained on, unlike ArguAna's counter-arguments, where the same reranker cost 0.096.
+- **HNSW loses more on a bigger corpus.** My from-scratch engine keeps 90% of exact dense search's nDCG@10 here (0.332 vs 0.369), down from 98% on SciFact. With 11× as many documents, its approximate search misses more of the true nearest neighbors at the same settings.
 
 ## The app
 
