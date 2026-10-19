@@ -31,6 +31,7 @@ DATASETS = {
     "scifact": "SciFact: scientific claims checked against research abstracts",
     "nfcorpus": "NFCorpus: nutrition questions answered from medical papers",
     "arguana": "ArguAna: find the best counter-argument to a debate argument",
+    "fiqa": "FiQA: personal finance questions answered from forum posts",
 }
 
 # In these datasets every query is also a document in the corpus (ArguAna's queries are arguments

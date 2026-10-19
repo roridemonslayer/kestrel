@@ -257,7 +257,7 @@ function Detail(props: {
             {col.results.map((h, i) => (
               <div key={h.doc_id} className={`hit ${h.relevant ? 'rel' : ''}`}>
                 <span className="rank mono">{i + 1}</span>
-                <span className="title">{h.title || h.doc_id}</span>
+                <span className="title">{h.title || h.snippet || h.doc_id}</span>
                 <span className="meta mono">
                   {h.relevant && <span className="tag">RELEVANT</span>}
                   <span>score {h.score.toFixed(3)}</span>
@@ -273,7 +273,7 @@ function Detail(props: {
             <strong>Relevant but missed by every retriever:</strong>
             {Object.entries(missed).map(([id, d]) => (
               <div key={id} style={{ marginTop: 6 }}>
-                <span className="mono dim">{id}</span> {d.title}
+                <span className="mono dim">{id}</span> {d.title || d.snippet}
               </div>
             ))}
           </div>
