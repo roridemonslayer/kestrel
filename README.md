@@ -10,7 +10,7 @@ It's also the start of a shared retrieval layer: the code in `backend/retrieval/
 
 ## Status
 
-- [x] BEIR dataset loader (SciFact, NFCorpus, ArguAna)
+- [x] BEIR dataset loader (SciFact, NFCorpus, ArguAna, FiQA)
 - [x] Retriever interface + BM25 (index cached to disk)
 - [x] Metrics (recall@k, MRR, nDCG@k in plain Python) + hand-checkable tests
 - [x] Eval runner + CLI
@@ -60,6 +60,21 @@ Each ArguAna query is a debate argument, and the one relevant document is its be
 - **A query is its own top hit.** 1,298 of the queries are documents in the corpus, so every retriever ranks the query first. BEIR's evaluation drops a query's own document from its results, and so does kestrel for datasets in `DROP_SELF_MATCHES` (eval and live search). Like BEIR, it matches by id, so the 108 queries whose text appears in the corpus under a different id still find that copy, which only pushes the real answer down.
 - **Dense matches its published score.** MiniLM's 0.483 is close to its MTEB ArguAna score (0.502). BM25 scores higher than the BEIR paper's (0.315; 0.414 in later Pyserini runs) because it uses different settings: k1 = 1.5, b = 0.75, no stemming, and rank_bm25's IDF.
 - **The reranker hurts.** It costs 0.096 nDCG@10. `ms-marco-MiniLM-L-6-v2` learned to find passages that answer a question, so it likely favors arguments on the same side as the query over the counter-argument (and it truncates these long query + document pairs at 512 tokens). The BEIR paper saw the same thing with its MS MARCO cross-encoder on ArguAna. Whether a reranker helps depends on the task it was trained for.
+
+### FiQA (648 test queries, k = 10)
+
+| Retriever | recall@10 | MRR@10 | nDCG@10 | p50 ms | p95 ms |
+|---|---|---|---|---|---|
+| Hybrid + cross-encoder rerank | **0.451** | **0.448** | **0.376** | 769.1 | 1218.2 |
+| Dense (all-MiniLM-L6-v2) | 0.439 | 0.446 | 0.369 | 16.8 | 37.3 |
+| Hybrid (BM25 + dense, RRF) | 0.419 | 0.413 | 0.342 | 152.4 | 312.0 |
+| BM25 | 0.295 | 0.283 | 0.231 | 123.6 | 228.1 |
+
+FiQA asks personal finance questions ("Where should I park my rainy-day / emergency fund?") and answers them with posts from finance forums. The 57,638 posts have no titles, and the median query has 2 relevant answers.
+
+- **Both baselines match published scores.** BM25's 0.231 is close to the BEIR paper's 0.236, and MiniLM's 0.369 matches its MTEB FiQA score.
+- **Hybrid loses to dense.** This is the only dataset here where fusing BM25 in hurts (-0.027 nDCG@10). People ask about money in different words than the answers use ("park my emergency fund" vs. "high-yield savings account"), so BM25 trails dense by 0.138, and RRF weighs both lists equally, letting BM25's misses push down dense's good results. Fusion pays off when both retrievers are about as good but fail on different queries, as on SciFact.
+- **The reranker helps here.** It adds 0.034 over hybrid and edges out dense. FiQA's questions look like the web search questions `ms-marco-MiniLM-L-6-v2` was trained on, unlike ArguAna's counter-arguments, where the same reranker cost 0.096.
 
 ## The app
 
